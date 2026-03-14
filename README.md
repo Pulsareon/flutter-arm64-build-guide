@@ -22,8 +22,26 @@ sudo apt install -y \
   git curl unzip xz-utils zip \
   openjdk-17-jdk \
   clang cmake ninja-build pkg-config \
-  libgtk-3-dev liblzma-dev libstdc++-10-dev
+  libgtk-3-dev liblzma-dev libstdc++-10-dev \
+  qemu-user-static
 ```
+
+> **关键：为什么需要 qemu-user-static？**
+>
+> Android SDK build-tools（`aapt2`、`adb`、`zipalign` 等）**只提供 x86-64 预编译二进制**，没有原生 ARM64 版本。
+> `qemu-user-static` 通过 binfmt_misc 内核机制，让系统透明地用 QEMU 用户态模拟运行这些 x86-64 工具，
+> 无需手动配置，安装后即生效。
+>
+> 验证：
+> ```bash
+> file ~/Android/build-tools/*/aapt2
+> # 应显示: ELF 64-bit LSB ... x86-64
+>
+> ~/Android/build-tools/36.0.0/aapt2 version
+> # 如果能输出版本号，说明 QEMU 模拟正常工作
+> ```
+>
+> **注意**：QEMU 模拟会带来约 3-5 倍的性能损耗，这也是 ARM64 上编译比 x86 慢的主要原因之一。
 
 ### 1.3 配置 swap（低内存设备必须）
 
@@ -426,6 +444,44 @@ dmesg | grep -i "oom\|kill"
 # 4. 使用 --no-daemon 避免 daemon 常驻
 cd android && ./gradlew assembleRelease --no-daemon && cd ..
 ```
+
+> QEMU 模拟会额外增加内存开销（每个 x86 进程都需要翻译缓存），OOM 阈值比纯原生环境更低。
+
+### 6.8 QEMU 模拟相关问题
+
+ARM64 上编译 Flutter 依赖 `qemu-user-static` 透明模拟 Android SDK 的 x86-64 工具，
+这是**隐性依赖**，容易遗漏导致莫名失败。
+
+**症状：aapt2 / adb 等工具报 "Exec format error"**
+
+```bash
+# 检查 binfmt 是否注册了 x86-64
+ls /proc/sys/fs/binfmt_misc/qemu-x86_64
+# 应存在此文件
+
+# 如果不存在，重新注册
+sudo systemctl restart binfmt-support
+
+# 验证 QEMU 能正常模拟
+file ~/Android/build-tools/36.0.0/aapt2   # 应显示 x86-64
+~/Android/build-tools/36.0.0/aapt2 version  # 应能输出版本号
+```
+
+**症状：flutter analyze 被 signal -9 杀掉**
+
+Dart analysis server 在 QEMU 模拟下内存翻倍膨胀，容易触发 OOM killer：
+
+```bash
+# 跳过 analyze 直接编译
+flutter build apk --release
+
+# 或限制 Dart analyzer 内存
+export DART_VM_OPTIONS="--old_gen_heap_size=512"
+flutter analyze
+```
+
+**性能提示**：QEMU 用户态模拟会让 aapt2 等工具慢 3-5 倍。
+如果有条件，可在 x86-64 机器上交叉编译 APK 再传到 ARM64 设备部署，效率更高。
 
 ---
 
