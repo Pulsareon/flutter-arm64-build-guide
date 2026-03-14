@@ -27,7 +27,7 @@ sudo apt install -y \
 
 ### 1.3 配置 swap（低内存设备必须）
 
-RAM 低于 4GB 的设备（如全志 A733 仅 3.8GB），Gradle 编译时极易 OOM。**强烈建议配置 swap**：
+RAM 低于 4GB 的设备，Gradle 编译时极易 OOM。**强烈建议配置 swap**：
 
 ```bash
 # 创建 2GB swap 文件
@@ -181,7 +181,7 @@ distributionUrl=https\://services.gradle.org/distributions/gradle-8.4-all.zip
 # 4GB+ RAM 设备
 org.gradle.jvmargs=-Xmx1536M -XX:MaxMetaspaceSize=512M -XX:+HeapDumpOnOutOfMemoryError
 
-# 4GB 以下 RAM 设备（如全志 A733 / 3.8GB RAM），使用更保守的参数：
+# 4GB 以下 RAM 设备，使用更保守的参数：
 # org.gradle.jvmargs=-Xmx1024M -XX:MaxMetaspaceSize=256M -XX:+HeapDumpOnOutOfMemoryError
 
 android.useAndroidX=true
@@ -383,8 +383,8 @@ export PUB_HOSTED_URL=https://pub.flutter-io.cn
 ### 6.5 首次编译极慢
 
 ARM64 设备 CPU 性能有限，首次编译需要下载 + 编译所有依赖：
-- **高性能 SoC**（RK3588 等大小核 A76+A55）：15-30 分钟
-- **中低端 SoC**（全志 A733 等纯 Cortex-A55）：30-60 分钟甚至更久
+- **高性能 SoC**（RK3588 4xA76+4xA55 / 全志 A733 2xA76+6xA55）：15-30 分钟
+- **低端 SoC**（纯 Cortex-A55 等）：30-60 分钟甚至更久
 
 后续增量编译会快很多。
 
@@ -490,7 +490,7 @@ chmod +x build_apk.sh
 | 组件 | 版本 | 备注 |
 |------|------|------|
 | Linux | Debian 11 bullseye | aarch64 |
-| SoC | 全志 A733 (Cortex-A55) | Radxa Cubie A7A |
+| SoC | [全志 A733](https://www.allwinnertech.com/index.php?c=product&id=139) (2xA76 + 6xA55, PowerVR BXM-4-64 GPU, 3Tops NPU) | Radxa Cubie A7A |
 | JDK | OpenJDK 17.0.18 | arm64 版 |
 | Flutter | 3.41.4 stable | linux-arm64 |
 | Dart | 3.11.1 | 随 Flutter 自带 |
@@ -518,4 +518,4 @@ chmod +x build_apk.sh
 ---
 
 *最后更新: 2026-03-14*
-*验证平台: Debian 11 aarch64 / 全志 A733 (Radxa Cubie A7A)*
+*验证平台: Debian 11 aarch64 / [全志 A733](https://www.allwinnertech.com/index.php?c=product&id=139) (2xA76 + 6xA55) / Radxa Cubie A7A*
